@@ -184,13 +184,13 @@ footer a{color:var(--blue);text-underline-offset:2px;text-decoration:underline}
   .spec{grid-template-columns:1fr;gap:6px;padding:24px 0}
   .tile{width:220px}
 }
-@media (prefers-reduced-motion: reduce){
-  html{scroll-behavior:auto}
-  .rise,.hero .rise{opacity:1;transform:none;animation:none;transition:none}
-  .win{transform:none}
-  .track{animation:none}
-  .story{height:auto}.story .in{position:static;height:auto;padding:90px 0}.story .w{color:var(--ink)}
-}
+html.calm{scroll-behavior:auto}
+html.calm .rise,html.calm .hero .rise{opacity:1;transform:none;animation:none;transition:none}
+html.calm .win{transform:none}
+html.calm .track{animation:none}
+html.calm .story{height:auto}html.calm .story .in{position:static;height:auto;padding:90px 0}html.calm .story .w{color:var(--ink)}
+.calm-btn{font:inherit;font-size:12.5px;color:var(--faint);background:none;border:0;cursor:pointer;margin-top:10px;text-decoration:underline;text-underline-offset:2px}
+.calm-btn:hover{color:var(--sub)}
 </style>
 </head>
 <body>
@@ -303,6 +303,7 @@ footer a{color:var(--blue);text-underline-offset:2px;text-decoration:underline}
 
 <footer>
   <div>Projet personnel, indépendant de NVIDIA, AMD, Intel, Microsoft, ReShade et Apple.</div>
+  <button class="calm-btn" id="calmBtn" type="button"></button>
   <details>
     <summary>Crédits photos · Wikimedia Commons</summary>
     <ul>
@@ -320,7 +321,10 @@ footer a{color:var(--blue);text-underline-offset:2px;text-decoration:underline}
 </footer>
 
 <script>
-const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let reduce=false;try{reduce=localStorage.getItem('calm')==='1'}catch(e){}
+if(reduce)document.documentElement.classList.add('calm');
+(function(){const b=document.getElementById('calmBtn');b.textContent=reduce?'Animations : réduites (activer)':'Animations : activées (réduire)';
+b.onclick=()=>{try{localStorage.setItem('calm',reduce?'0':'1')}catch(e){}location.reload()}})();
 
 /* ======== Matrice de couleur : identique à ColorEngine.cs ======== */
 const I=()=>[1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1];
@@ -468,6 +472,7 @@ document.querySelectorAll('.rise').forEach(el=>{if(!el.closest('.hero'))io.obser
 </script>
 </body>
 </html>
+
 
 
 
