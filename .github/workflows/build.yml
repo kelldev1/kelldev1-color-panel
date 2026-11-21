@@ -1,0 +1,72 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Publish
+        run: >
+          dotnet publish ColorPanel.csproj -c Release -r win-x64 --self-contained true
+          -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=none -o publish
+
+      - name: Upload unsigned exe
+        id: unsigned
+        uses: actions/upload-artifact@v4
+        with:
+          name: ColorPanel-unsigned
+          path: publish/ColorPanel.exe
+
+      # Signature par SignPath : seulement sur un tag "vX.Y.Z" et une fois SignPath configuré
+      # (variable de dépôt SIGNPATH_ORGANIZATION_ID + secret SIGNPATH_API_TOKEN).
+      # Vérifie la version de l'action et les "slugs" dans la documentation SignPath.
+      - name: Sign with SignPath
+        if: ${{ startsWith(github.ref, 'refs/tags/v') && vars.SIGNPATH_ORGANIZATION_ID != '' }}
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ColorPanel
+          signing-policy-slug: release-signing
+          github-artifact-id: ${{ steps.unsigned.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: signed
+
+      - name: Package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory package/ColorPanel/photos -Force | Out-Null
+          $exe = if (Test-Path signed/ColorPanel.exe) { 'signed/ColorPanel.exe' } else { 'publish/ColorPanel.exe' }
+          Copy-Item $exe package/ColorPanel/ColorPanel.exe
+          Copy-Item photos/* package/ColorPanel/photos/ -Force
+          Compress-Archive -Path package/ColorPanel -DestinationPath ColorPanel.zip -Force
+          $h = (Get-FileHash ColorPanel.zip -Algorithm SHA256).Hash.ToLower()
+          "SHA-256 : $h" | Tee-Object -FilePath sha256.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ColorPanel
+          path: ColorPanel.zip
+
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ColorPanel.zip
+          body_path: sha256.txt

@@ -1,0 +1,22 @@
+# Build
+bin/
+obj/
+dist/
+release/
+publish/
+package/
+signed/
+*.zip
+
+# Site : l'archive est distribuée via GitHub Releases
+site/downloads/
+
+# Images personnelles (licence inconnue) : ne pas publier
+photos/feuilles-violettes.jpg
+photos/fleur-orange.jpg
+site/assets/photos/feuilles-violettes.jpg
+site/assets/photos/fleur-orange.jpg
+
+# IDE
+.vs/
+*.user
